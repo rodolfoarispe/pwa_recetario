@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recetario Dr. Luis Pretto</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #eee;
+      font-family: sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .canvas {
+      position: relative;
+      width: 100vw;
+      max-width: 768px;
+      aspect-ratio: 768 / 1138;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .canvas img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    input.nombre {
+      position: absolute;
+      top: 18%;
+      left: 20%;
+      width: 70%;
+      border: none;
+      border-bottom: 1px solid #000;
+      background: transparent;
+      font-size: 0.7em;
+      color: #000;
+      padding: 0.5em;
+    }
+
+    .overlay-nombre {
+      position: absolute;
+      top: 18%;
+      left: 20%;
+      width: 70%;
+      font-size: 0.7em;
+      color: #000;
+      padding: 0.5em;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 2;
+    }
+
+    textarea,
+    .overlay-text {
+      position: absolute;
+      top: 26%;
+      left: 9%;
+      width: 82%;
+      height: 52%;
+      padding: 1em;
+      font-size: 0.7em;
+      line-height: 1.4em;
+      font-family: sans-serif;
+    }
+
+    textarea {
+      background: transparent;
+      border: none;
+      resize: none;
+      color: #000;
+    }
+
+    button {
+      position: absolute;
+      bottom: 4%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.8em 2em;
+      font-size: 1em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="canvas" id="canvasArea">
+    <img src="recetario.jpg" alt="Fondo Recetario" crossorigin="anonymous">
+    <input type="text" id="nombre" class="nombre" placeholder="Nombre">
+    <textarea id="texto" placeholder="Escribe aquí..."></textarea>
+    <button id="btnEnviar" onclick="shareContent()">ENVIAR</button>
+  </div>
+
+  <script src="html2canvas.min.js"></script>
+  <script>
+    async function shareContent() {
+      try {
+        const canvasArea = document.getElementById('canvasArea');
+        const textarea = document.getElementById('texto');
+        const nombre = document.getElementById('nombre');
+        const button = document.getElementById('btnEnviar');
+
+        const overlayNombre = document.createElement('div');
+        overlayNombre.className = 'overlay-nombre';
+        overlayNombre.textContent = nombre.value;
+
+        const overlayTexto = document.createElement('div');
+        overlayTexto.className = 'overlay-text';
+        overlayTexto.textContent = textarea.value;
+        overlayTexto.style.whiteSpace = 'pre-wrap';
+        overlayTexto.style.color = '#000';
+        overlayTexto.style.background = 'transparent';
+        overlayTexto.style.pointerEvents = 'none';
+        overlayTexto.style.zIndex = '2';
+
+        canvasArea.appendChild(overlayNombre);
+        canvasArea.appendChild(overlayTexto);
+
+        textarea.style.visibility = 'hidden';
+        nombre.style.visibility = 'hidden';
+        button.style.visibility = 'hidden';
+
+        const canvas = await html2canvas(canvasArea, { useCORS: true });
+        const blob = await new Promise(resolve => canvas.toBlob(resolve));
+
+        if (!blob) throw new Error("No se pudo generar la imagen");
+
+        const file = new File([blob], "recetario.jpg", { type: blob.type });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Recetario" });
+        } else {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'recetario.jpg';
+          link.click();
+        }
+
+        textarea.style.visibility = 'visible';
+        nombre.style.visibility = 'visible';
+        button.style.visibility = 'visible';
+        canvasArea.removeChild(overlayNombre);
+        canvasArea.removeChild(overlayTexto);
+      } catch (err) {
+        alert("Error al generar o compartir la imagen: " + err.message);
+      }
+    }
+  </script>
+  <script>
+    console.log('Intentando registrar el service worker');
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          console.log('Intentando registrar el service worker');
+          const registration = await navigator.serviceWorker.register('/service-worker.js');
+          console.log('Service Worker registrado con éxito:', registration);
+        } catch (error) {
+          console.error('Error al registrar el Service Worker:', error);
+        }
+      });
+    }
+
+  </script>
+</body>
+
+</html>

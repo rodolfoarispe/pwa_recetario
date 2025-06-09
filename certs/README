@@ -1,0 +1,6 @@
+openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout certs/selfsigned.key \
+  -out certs/selfsigned.crt \
+  -days 365 \
+  -subj "/CN=localhost"
+
